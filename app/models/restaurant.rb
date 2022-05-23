@@ -10,10 +10,10 @@
 class Restaurant < ApplicationRecord
   # アソシエーション定義
   has_many :foods
-  has_many :line_foods, through::foods
+  has_many :line_foods, through: :foods
 
   # バリデーションを定義
   validates :name, :fee, :time_required, presence: true # カラムのデータが必ず存在する
   validates :name, length: { maximum: 30 } # 文字数を最大30文字以下に制限
-  validates :fee, numericality: { greater_than :0 } # fee(手数料)が0以上の数値であること
+  validates :fee, numericality: { greater_than: 0 } # fee(手数料)が0以上の数値であること
 end
