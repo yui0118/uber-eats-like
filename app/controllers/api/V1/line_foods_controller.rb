@@ -1,0 +1,61 @@
+module Api
+  module V1
+    class LineFoodsController < ApplicationController
+      before_action :set_food, only: %i[create] # アクションの実行前にset_foodフィルタを実行
+
+      # 仮注文の作成メソッド
+      def create
+        # 他店舗での仮注文がすでにある場合は、JSON形式のデータを返却してreturn文で処理を終了するようにif文で条件分岐を行う。
+        # activeとother_restaurantは、scopeで定義したクエリメソッドです。
+        # other_restaurantの引数に現在仮注文しようとしているレストランのidを渡しています。
+        # JSON形式のデータは、existing_restaurantですでに仮注文が作成されていた他店舗の情報と、new_restaurantでこのリクエストで作成しようとした新店舗の情報の２つを返します。
+        # HTTPレスポンスステータスコードはサーバは要求されたページをクライアントが受け入れ可能な形式で送信することが出来ないという意味の406 Not Acceptableを返します。
+        if LineFood.active.other_restaurant(@orderd_food.restautant.id).exists? 
+          return render json: {
+            existing_restautant: LineFood.other_restaurant(@ordered_food.restaurant.id).first.restaurant.name, # 既に仮注文が作成されていた他店舗名
+            new_restaurant: Food.find(params[:food_id]).restaurant.name, # 新規に仮注文を作成しようとしていた現在選択中の店舗名
+          }, status: :not_acceptable # サーバは要求されたページをクライアントが受け入れ可能な形式で送信できない
+        end
+
+        # 例外パターンに当てはまらず、正常に仮注文を作成する場合は、set_line_food(@ordered_food)で仮注文インスタンスを生成
+        set_line_food(@ordered_food)
+
+        # 仮注文インスタンスをDBに保存する
+        if @line_food.save # DBへの保存が成功した場合、
+          render json: { # リクエストが成功してリソースの作成が完了したことを表す201 Createdと保存したデータを返します
+            line_food: @line_food
+          }, status: :created
+        else # DBへの保存時にエラーが発生した場合、
+          render json{}, status: :internal_server_error # サーバー側で処理方法がわからない事態が発生したことを示す500 Internal Server Errorをブラウザに表示
+        end
+      end
+
+      private
+
+      # 仮注文しようと現在選択中の食べ物をfood_idで取得するメソッド
+      # params[:food_id]を受け取って、対応するFoodを１つ抽出し、@ordered_foodというインスタンス変数に代入
+      def set_food
+        @ordered_food = Food.find(params[:food_id])
+      end
+
+      # 仮注文作成メソッド
+      # 引数ordered_foodには、仮注文した食べ物インスタンスが入ってきます。
+      # すでに同じ食べ物に関する仮注文が存在する場合とその食べ物に関する仮注文を新たに作成する場合で処理を分岐する
+      def set_line_food(ordered_food)
+        if ordered_food.line_food.present? # すでに同じ食べ物に関する仮注文が存在する場合
+          @line_food = ordered_food.line_food # 既存の仮注文した食べ物に関する情報(count、active)を取得する
+          @line_food.attributes = { # 仮注文インスタンスの既存の情報をattributes=メソッドで更新する
+            count: ordered_food.line_food.count + params[:count], # 既存の注文した個数に現在の注文を上書き
+            active: true # 仮注文で選択されていることを有効にする
+          }
+        else # 新しくその食べ物に関する仮注文を作成する場合
+          @line_food = ordered_food.build_line_food( # 現在選択している食べ物の仮注文インスタンスを新規に作成
+            count: params[:count], # 仮注文した食べ物の個数をparams[:count]で受け取り登録する
+            restautant: ordered_food.restaurant, # 仮注文した食べ物に紐づく店舗のIDを登録する
+            active: true # 仮注文で選択されていることを有効にする
+          )
+        end
+      end
+    end
+  end
+end
