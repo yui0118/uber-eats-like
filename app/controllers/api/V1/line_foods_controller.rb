@@ -13,7 +13,7 @@ module Api
             line_food_ids: line_foods.map { |line_food| line_food.id }, # 仮注文インスタンスのidを配列形式で取得
             restaurant: line_foods[0].restaurant, # 仮注文した中から先頭の仮注文した食べ物を販売する店舗の情報
             count: line_foods.sum { |line_food| line_food[:count] }, # 仮注文した食べ物の個数の合計値
-            amount: line_foods.sum { |line_food| line_food.total_amount }, # 仮注文した食べ物の個数の総数を計算
+            amount: line_foods.sum { |line_food| line_food.total_amount }, # 仮注文した食べ物の合計金額を「数量 × 単価」で計算
           }, status: :ok
         else # activeな仮注文インスタンスが一つもDBに存在しない場合、例外を発生させるのではなく
           # JSON形式の空データと「リクエストは成功したが、空データ」のステータスコード204を返します
