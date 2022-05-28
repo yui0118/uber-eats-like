@@ -3,6 +3,25 @@ module Api
     class LineFoodsController < ApplicationController
       before_action :set_food, only: %i[create] # アクションの実行前にset_foodフィルタを実行
 
+      # 仮注文の一覧表示メソッド
+      def index
+        # 全ての仮注文の中から、activeなもの(active: trueなLineFood)の一覧を取得して、line_foodsという変数に代入
+        # activeは、LineFoodモデルのスコープで、active: trueなLineFoodの一覧をモデル名.スコープ名の形で取得できる
+        line_foods = LineFood.active 
+        if line_foods.exists? # 仮注文のインスタンスのデータがDBに存在するかどうかを確認
+          render json: { # DBにデータが存在する場合、仮注文インスタンスから取得した情報をJSON形式で返す
+            line_food_ids: line_foods.map { |line_food| line_food.id }, # 仮注文インスタンスのidを配列形式で取得
+            restaurant: line_foods[0].restaurant, # 仮注文した中から先頭の仮注文した食べ物を販売する店舗の情報
+            count: line_foods.sum { |line_food| line_food[:count] }, # 仮注文した食べ物の個数の合計値
+            amount: line_foods.sum { |line_food| line_food.total_amount }, # 仮注文した食べ物の個数の総数を計算
+          }, status: :ok
+        else # activeな仮注文インスタンスが一つもDBに存在しない場合、例外を発生させるのではなく
+          # JSON形式の空データと「リクエストは成功したが、空データ」のステータスコード204を返します
+          render json: {}, status: :no_content
+        end
+      end
+
+
       # 仮注文の作成メソッド
       def create
         # 他店舗での仮注文がすでにある場合は、JSON形式のデータを返却してreturn文で処理を終了するようにif文で条件分岐を行う。
@@ -10,7 +29,7 @@ module Api
         # other_restaurantの引数に現在仮注文しようとしているレストランのidを渡しています。
         # JSON形式のデータは、existing_restaurantですでに仮注文が作成されていた他店舗の情報と、new_restaurantでこのリクエストで作成しようとした新店舗の情報の２つを返します。
         # HTTPレスポンスステータスコードはサーバは要求されたページをクライアントが受け入れ可能な形式で送信することが出来ないという意味の406 Not Acceptableを返します。
-        if LineFood.active.other_restaurant(@orderd_food.restautant.id).exists? 
+        if LineFood.active.other_restaurant(@orderd_food.restautant.id).exists?
           return render json: {
             existing_restautant: LineFood.other_restaurant(@ordered_food.restaurant.id).first.restaurant.name, # 既に仮注文が作成されていた他店舗名
             new_restaurant: Food.find(params[:food_id]).restaurant.name, # 新規に仮注文を作成しようとしていた現在選択中の店舗名
