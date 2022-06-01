@@ -1,7 +1,7 @@
 module Api
   module V1
     class LineFoodsController < ApplicationController
-      before_action :set_food, only: %i[create] # アクションの実行前にset_foodフィルタを実行
+      before_action :set_food, only: %i[create replace] # アクションの実行前にset_foodフィルタを実行
 
       # 仮注文の一覧表示メソッド
       def index
@@ -49,6 +49,25 @@ module Api
         end
       end
 
+      def replace
+        # 他店舗のactiveな仮注文商品一覧を論理削除する(activeカラムをfalseにする)
+        LineFood.active.other_restaurant(@ordered_food.restaurant.id)each do |line_food|
+          line_food.update_attribute(:active, false)
+        end
+
+        # 現在選択されている商品の仮注文インスタンスを作成する
+        set_line_food(@ordered_food)
+
+        # 仮注文インスタンスをDBに保存する
+        if @line_food.save
+          render json: {
+            line_food: @line_food
+          }, status: :created
+        else
+          render json: {}, status: :internal_server_error
+        end
+      end
+
       private
 
       # 仮注文しようと現在選択中の食べ物をfood_idで取得するメソッド
@@ -57,7 +76,7 @@ module Api
         @ordered_food = Food.find(params[:food_id])
       end
 
-      # 仮注文作成メソッド
+      # 仮注文インスタンス作成メソッド
       # 引数ordered_foodには、仮注文した食べ物インスタンスが入ってきます。
       # すでに同じ食べ物に関する仮注文が存在する場合とその食べ物に関する仮注文を新たに作成する場合で処理を分岐する
       def set_line_food(ordered_food)
