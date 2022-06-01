@@ -64,6 +64,7 @@ module Api
             line_food: @line_food
           }, status: :created
         else
+          # 失敗した場合はstatus: :internal_server_errorと空データを返す
           render json: {}, status: :internal_server_error
         end
       end
