@@ -26,8 +26,8 @@ class LineFood < ApplicationRecord
   scope :active, -> { where(active: true) }
   scope :other_restaurant, -> (picked_restaurant_id) { where.not(restaurant_id: picked_restaurant_id) }
 
-  # インスタンスメソッド
+  # 仮注文の合計金額を求めるインスタンスメソッド
   def total_amount
-    food.price * count # 仮注文の合計金額を求める
+    food.price * count
   end
 end

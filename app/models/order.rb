@@ -12,13 +12,15 @@ class Order < ApplicationRecord
 
 
   # LineFoodデータの更新と、Orderデータの保存を処理するインスタンスメソッド
-  # トランザクションの中で行うようにすることで、この２つの処理のいずれかが失敗した場合に全ての処理をなかったことにする
+  # トランザクションの中で行うようにすることで、この２つの処理のいずれかが失敗した場合に全ての処理をなかったことにする(ロールバック)
   def save_with_update_line_foods!(line_foods)
     ActiveRecord::Base.transaction do
       line_foods.each do |line_food|
+        # 仮注文のレコード(activeとorder_id)を更新
+        # order: selfでは、line_foodインスタンスオブジェクトのorder_idという属性(カラム)を更新
         line_food.update_attributes!(active: false, order: self)
       end
-      self.save!
+      self.save! # Orderモデルから生成されたインスタンスオブジェクトをDBに保存する
     end
   end
 end
