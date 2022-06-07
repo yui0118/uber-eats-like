@@ -21,13 +21,13 @@ class LineFood < ApplicationRecord
 
   # スコープ定義
   # scopeはモデルそのものや関連するオブジェクトに対するクエリメソッドを指定できる
-  # activeは、全てのLineFoodからactiveレコードがtrueなものだけを取得できるクエリメソッド(仮注文があるものだけを取得できる)
-  # other_restaurantは、restaurant_idが特定の店舗IDではないもの一覧を返すクエリメソッド(他店舗の仮注文があるかどうかを確認できる)
+  # activeは、全てのLineFoodからactiveレコードがtrueなものだけを取得できるクエリメソッド(仮注文がある食べ物だけを取得)
+  # other_restaurantは、restaurant_idが特定の店舗IDではないもの一覧を返すクエリメソッド(他店舗に仮注文があるかどうかを確認)
   scope :active, -> { where(active: true) }
   scope :other_restaurant, -> (picked_restaurant_id) { where.not(restaurant_id: picked_restaurant_id) }
 
-  # インスタンスメソッド
+  # 仮注文の合計金額を求めるインスタンスメソッド
   def total_amount
-    food.price * count # 仮注文の合計金額を求める
+    food.price * count
   end
 end
