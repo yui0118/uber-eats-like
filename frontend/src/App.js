@@ -1,4 +1,4 @@
-import logo from "./logo.svg";
+import React from "react";
 import "./App.css";
 // ReactRouterは、URLとコンポーネントを紐づける役割を担う
 // React Routerは、JavaScriptを使ってページ内の更新が必要な箇所のみ更新を行います(SPA)
@@ -7,11 +7,11 @@ import { BrowserRouter as Router, Switch, Route } from "react-router-dom";
 // コンポーネントのimport
 // データを持つコンポーネントは、containers/配下
 // データをなるべく持たないコンポーネントは、components/配下
-import { Restautants } from "./containers/Restaurants.jsx";
+import { Restaurants } from "./containers/Restaurants.jsx";
 import { Foods } from "./containers/Foods.jsx";
 import { Orders } from "./containers/Orders.jsx";
 
-function App() {
+export default function App() {
   return (
     // ３つのコンポーネントをReact Routerでルーティングさせる
     // <Router>...</Router>で全体を囲み、ルーティング先のコンポーネントを<Switch>...</Switch>で囲みます。
@@ -23,12 +23,15 @@ function App() {
       <Switch>
         {/* 店舗一覧ページ */}
         <Route exact path="/restaurants">
-          <Restautants />
+          <Restaurants />
         </Route>
-        {/* 商品一覧ページ */}
-        <Route exact path="/foods">
-          <Foods />
-        </Route>
+        {/* フード一覧ページ */}
+        {/* Foodsコンポーネントにmatchというpropsを渡しながら、設定したPATHに対応するリクエストがあった場合にパラメーターと一緒にFoodsコンポーネントをレンダリング */}
+        <Route
+          exact
+          path="/restaurants/:restaurantsId/foods"
+          render={({ match }) => <Foods match={match} />}
+        />
         {/* 注文ページ */}
         <Route exact path="/orders">
           <Orders />
@@ -37,5 +40,3 @@ function App() {
     </Router>
   );
 }
-
-export default App;
